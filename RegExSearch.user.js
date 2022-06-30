@@ -1,14 +1,16 @@
 // ==UserScript==
 // @name           RegEx Search
-// @version        1.0.1
+// @version        1.0.2
 // @author         Mariotti94
 // @namespace      regexSearch
 // @run-at         document-end
-// @include        http://*/*
-// @include        https://*/*
-// @include        file://*/*
+// @match          *://*/*
 // ==/UserScript==
 
+//config
+activeExport = true;
+
+//elements
 var searchMain = document.createElement('div');
 searchMain.id = 'searchMain';
 document.body.appendChild(searchMain);
@@ -16,7 +18,6 @@ document.body.appendChild(searchMain);
 var searchToggle = document.createElement('span');
 searchToggle.id = 'searchToggle';
 searchToggle.textContent = 'Search';
-searchToggle.setAttribute( 'onclick' , 'toggleDiv();' );
 searchMain.appendChild(searchToggle);
 
 var searchDiv = document.createElement('div');
@@ -24,22 +25,26 @@ searchDiv.id = 'searchDiv';
 searchDiv.style.cssText = "display: none;";
 searchMain.appendChild(searchDiv);
 
+if(activeExport) {
+    var searchExport = document.createElement('span');
+    searchExport.id = 'searchExport';
+    searchExport.textContent = 'export';
+    searchDiv.appendChild(searchExport);
+}
+
 var searchStart = document.createElement('span');
 searchStart.id = 'searchStart';
 searchStart.textContent = 'start';
-searchStart.setAttribute( 'onclick' , 'resetColor(); findAndColor(); selectElement(true);' );
 searchDiv.appendChild(searchStart);
 
 var searchPrev = document.createElement('span');
 searchPrev.id = 'searchPrev';
 searchPrev.textContent = 'prev';
-searchPrev.setAttribute( 'onclick' , 'selectElement(false);' );
 searchDiv.appendChild(searchPrev);
 
 var searchNext = document.createElement('span');
 searchNext.id = 'searchNext';
 searchNext.textContent = 'next';
-searchNext.setAttribute( 'onclick' , 'selectElement(true);' );
 searchDiv.appendChild(searchNext);
 
 var searchAmount = document.createElement('span');
@@ -60,6 +65,8 @@ css.innerHTML = ".highlighted { background-color:yellow; } ";
 css.innerHTML += "#searchMain { all:unset; color:black; position:fixed; z-index:2147483647; bottom:0px; left:0px;  font-size: 14px; line-height:16px; } ";
 css.innerHTML += "#searchToggle {  all:unset; float:left; user-select:none; cursor:pointer; background: #ffffff; padding:5px;  font-weight: bold; border: 1px solid; } ";
 css.innerHTML += "#searchDiv { all:unset; float:left; } ";
+if(activeExport)
+    css.innerHTML += "#searchExport { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
 css.innerHTML += "#searchStart { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
 css.innerHTML += "#searchPrev { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
 css.innerHTML += "#searchNext { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
@@ -69,7 +76,7 @@ css.innerHTML += "#searchInput:focus { outline: none; } ";
 css.innerHTML += "#searchSpan { all:unset; float:left; display:none; padding: 5px; background-color:white; color:red; border: 1px solid black; margin-left: -1px; } ";
 document.body.appendChild(css);
 
-
+//globals
 toggleDiv = function() {
     var searchDiv = document.getElementById('searchDiv');
     if(searchDiv.style.display == 'none')
@@ -80,10 +87,8 @@ toggleDiv = function() {
 
 resetColor = function() {
     selectedElement = 0;
-    var amount = document.querySelector('#searchAmount');
-    amount.style.display = 'none';
     var em = document.querySelectorAll('em[class^="highlighted"]');
-    if( !em.length )
+    if(!em.length)
         return;
     for(var i=0; i<em.length; i++) {
         var parent = em[i].parentNode;
@@ -97,7 +102,7 @@ resetColor = function() {
 selectedElement = 0;
 selectElement = function(forward) {
     var em = document.querySelectorAll('em[class^="highlighted"]');
-    if( !em.length )
+    if(!em.length)
         return;
     var previousElement = selectedElement;
     if(forward)
@@ -127,7 +132,7 @@ findAndColor = function() {
 };
 
 findAndReplace = function(searchText, replacement, searchNode) {
-    if ( searchText == "()") {
+    if (searchText == "()") {
         return;
     }
     var regex;
@@ -168,3 +173,62 @@ findAndReplace = function(searchText, replacement, searchNode) {
         parent.removeChild(currentNode);
     }
 };
+
+saveData = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (data, fileName) {
+        var blob = new Blob([data], {type: "octet/stream"});
+        var url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.parentNode.removeChild(a);
+    };
+}());
+exportData = function() {
+    var em = document.querySelectorAll('em[class^="highlighted"]');
+    if(!em.length)
+        return;
+    let text = "";
+    for(var i=0; i<em.length; i++) {
+        text += em[i].textContent;
+        text += "\r\n";
+    }
+    var now = new Date();
+    var stamp = "-"+now.getFullYear().toString()+("00" + (now.getMonth()+1).toString()).slice(-2)+("00" + now.getDate().toString()).slice(-2)+"-"+("00" + now.getHours().toString()).slice(-2)+("00" + now.getMinutes().toString()).slice(-2)+("00" + now.getSeconds().toString()).slice(-2);
+    saveData(text, "dump"+stamp+".txt");
+};
+
+//CSP workaround
+function searchToggleFn(){
+    toggleDiv();
+}
+function searchStartFn(){
+    document.querySelector('#searchAmount').style.display = 'none';
+    if(activeExport)
+        document.querySelector('#searchExport').style.display = 'none';
+    resetColor();
+    findAndColor();
+    selectElement(true);
+    if(activeExport && document.querySelectorAll('em[class^="highlighted"]').length)
+        document.getElementById('searchExport').style.display = 'inline';
+}
+function searchPrevFn(){
+    selectElement(false);
+}
+function searchNextFn(){
+    selectElement(true);
+}
+function searchExportFn(){
+    exportData();
+}
+
+document.getElementById('searchToggle').addEventListener('click', searchToggleFn);
+document.getElementById('searchStart').addEventListener('click', searchStartFn);
+document.getElementById('searchPrev').addEventListener('click', searchPrevFn);
+document.getElementById('searchNext').addEventListener('click', searchNextFn);
+if(activeExport)
+    document.getElementById('searchExport').addEventListener('click', searchExportFn);
