@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           RegEx Search
-// @version        1.0.2
+// @version        1.0.3
 // @author         Mariotti94
 // @namespace      regexSearch
 // @run-at         document-end
@@ -8,7 +8,10 @@
 // ==/UserScript==
 
 //config
-activeExport = true;
+activeExport = true; //toggle for export selection functionality
+searchTopBottom = true; //alignment: false == Top, true == Bottom
+searchTopBottomPx = 0; //margin Top/Bottom
+searchLeftPx = 0; //margin Left
 
 //elements
 var searchMain = document.createElement('div');
@@ -62,7 +65,8 @@ searchDiv.appendChild(searchSpan);
 var css = document.createElement("style");
 css.type = "text/css";
 css.innerHTML = ".highlighted { background-color:yellow; } ";
-css.innerHTML += "#searchMain { all:unset; color:black; position:fixed; z-index:2147483647; bottom:0px; left:0px;  font-size: 14px; line-height:16px; } ";
+let positioning =((searchTopBottom) ? "bottom: "+searchTopBottomPx+"px; " : "top: "+searchTopBottomPx+"px; ")+"left: "+searchLeftPx+"px;";
+css.innerHTML += "#searchMain { all:unset; color:black; position:fixed; z-index:2147483647; "+positioning+" font-size: 14px; line-height:16px; } ";
 css.innerHTML += "#searchToggle {  all:unset; float:left; user-select:none; cursor:pointer; background: #ffffff; padding:5px;  font-weight: bold; border: 1px solid; } ";
 css.innerHTML += "#searchDiv { all:unset; float:left; } ";
 if(activeExport)
