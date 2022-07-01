@@ -1,17 +1,20 @@
 // ==UserScript==
 // @name           RegEx Search
-// @version        1.0.3
+// @version        1.0.4
 // @author         Mariotti94
 // @namespace      regexSearch
 // @run-at         document-end
 // @match          *://*/*
+// @grant          GM.setClipboard
 // ==/UserScript==
 
 //config
-activeExport = true; //toggle for export selection functionality
 searchTopBottom = true; //alignment: false == Top, true == Bottom
 searchTopBottomPx = 0; //margin Top/Bottom
 searchLeftPx = 0; //margin Left
+
+activeExpFile = true; //toggle for export to txt
+activeExpClip = true; //toggle for export to clipboard
 
 //elements
 var searchMain = document.createElement('div');
@@ -28,11 +31,18 @@ searchDiv.id = 'searchDiv';
 searchDiv.style.cssText = "display: none;";
 searchMain.appendChild(searchDiv);
 
-if(activeExport) {
-    var searchExport = document.createElement('span');
-    searchExport.id = 'searchExport';
-    searchExport.textContent = 'export';
-    searchDiv.appendChild(searchExport);
+if(activeExpFile) {
+    var searchExpFile = document.createElement('span');
+    searchExpFile.id = 'searchExpFile';
+    searchExpFile.textContent = 'export';
+    searchDiv.appendChild(searchExpFile);
+}
+
+if(activeExpClip) {
+    var searchExpClip = document.createElement('span');
+    searchExpClip.id = 'searchExpClip';
+    searchExpClip.textContent = 'copy all';
+    searchDiv.appendChild(searchExpClip);
 }
 
 var searchStart = document.createElement('span');
@@ -69,8 +79,10 @@ let positioning =((searchTopBottom) ? "bottom: "+searchTopBottomPx+"px; " : "top
 css.innerHTML += "#searchMain { all:unset; color:black; position:fixed; z-index:2147483647; "+positioning+" font-size: 14px; line-height:16px; } ";
 css.innerHTML += "#searchToggle {  all:unset; float:left; user-select:none; cursor:pointer; background: #ffffff; padding:5px;  font-weight: bold; border: 1px solid; } ";
 css.innerHTML += "#searchDiv { all:unset; float:left; } ";
-if(activeExport)
-    css.innerHTML += "#searchExport { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
+if(activeExpFile)
+    css.innerHTML += "#searchExpFile { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
+if(activeExpClip)
+    css.innerHTML += "#searchExpClip { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
 css.innerHTML += "#searchStart { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
 css.innerHTML += "#searchPrev { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
 css.innerHTML += "#searchNext { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
@@ -192,7 +204,7 @@ saveData = (function () {
         a.parentNode.removeChild(a);
     };
 }());
-exportData = function() {
+exportData = function(toTxt) {
     var em = document.querySelectorAll('em[class^="highlighted"]');
     if(!em.length)
         return;
@@ -203,7 +215,10 @@ exportData = function() {
     }
     var now = new Date();
     var stamp = "-"+now.getFullYear().toString()+("00" + (now.getMonth()+1).toString()).slice(-2)+("00" + now.getDate().toString()).slice(-2)+"-"+("00" + now.getHours().toString()).slice(-2)+("00" + now.getMinutes().toString()).slice(-2)+("00" + now.getSeconds().toString()).slice(-2);
-    saveData(text, "dump"+stamp+".txt");
+    if(toTxt)
+        saveData(text, "dump"+stamp+".txt");
+    else
+        GM.setClipboard(text);
 };
 
 //CSP workaround
@@ -212,13 +227,17 @@ function searchToggleFn(){
 }
 function searchStartFn(){
     document.querySelector('#searchAmount').style.display = 'none';
-    if(activeExport)
-        document.querySelector('#searchExport').style.display = 'none';
+    if(activeExpFile)
+        document.querySelector('#searchExpFile').style.display = 'none';
+    if(activeExpClip)
+        document.querySelector('#searchExpClip').style.display = 'none';
     resetColor();
     findAndColor();
     selectElement(true);
-    if(activeExport && document.querySelectorAll('em[class^="highlighted"]').length)
-        document.getElementById('searchExport').style.display = 'inline';
+    if(activeExpFile && document.querySelectorAll('em[class^="highlighted"]').length)
+        document.getElementById('searchExpFile').style.display = 'inline';
+    if(activeExpClip && document.querySelectorAll('em[class^="highlighted"]').length)
+        document.getElementById('searchExpClip').style.display = 'inline';
 }
 function searchPrevFn(){
     selectElement(false);
@@ -226,13 +245,18 @@ function searchPrevFn(){
 function searchNextFn(){
     selectElement(true);
 }
-function searchExportFn(){
-    exportData();
+function searchExpFileFn(){
+    exportData(true);
+}
+function searchExpClipFn(){
+    exportData(false);
 }
 
 document.getElementById('searchToggle').addEventListener('click', searchToggleFn);
 document.getElementById('searchStart').addEventListener('click', searchStartFn);
 document.getElementById('searchPrev').addEventListener('click', searchPrevFn);
 document.getElementById('searchNext').addEventListener('click', searchNextFn);
-if(activeExport)
-    document.getElementById('searchExport').addEventListener('click', searchExportFn);
+if(activeExpFile)
+    document.getElementById('searchExpFile').addEventListener('click', searchExpFileFn);
+if(activeExpClip)
+    document.getElementById('searchExpClip').addEventListener('click', searchExpClipFn);
