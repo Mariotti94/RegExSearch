@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           RegEx Search
-// @version        1.0.4
+// @version        1.0.5
 // @author         Mariotti94
 // @namespace      regexSearch
 // @run-at         document-end
@@ -15,6 +15,8 @@ searchLeftPx = 0; //margin Left
 
 activeExpFile = true; //toggle for export to txt
 activeExpClip = true; //toggle for export to clipboard
+
+saveLastQuery = true; //save query in browser memory
 
 //elements
 var searchMain = document.createElement('div');
@@ -143,8 +145,10 @@ findAndColor = function() {
     warning.innerHTML = '';
     warning.style.display = 'none';
     var input = document.getElementById('searchInput').value;
+    if(saveLastQuery)
+        localStorage.setItem('regexSearch_query', input);
     var replacement = "<em class='highlighted'>$1</em>";
-    findAndReplace("("+input+")",replacement,false);
+    findAndReplace("("+input+")", replacement, false);
 };
 
 findAndReplace = function(searchText, replacement, searchNode) {
@@ -224,6 +228,13 @@ exportData = function(toTxt) {
 //CSP workaround
 function searchToggleFn(){
     toggleDiv();
+    if(saveLastQuery) {
+        let temp = localStorage.getItem('regexSearch_query');
+        if(temp)
+            document.getElementById('searchInput').value = temp;
+    }
+    else
+        localStorage.removeItem('regexSearch_query');
 }
 function searchStartFn(){
     document.querySelector('#searchAmount').style.display = 'none';
