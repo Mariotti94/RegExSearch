@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           RegEx Search
-// @version        1.0.5
+// @version        1.0.6
 // @author         Mariotti94
 // @namespace      regexSearch
 // @run-at         document-end
@@ -8,15 +8,18 @@
 // @grant          GM.setClipboard
 // ==/UserScript==
 
+//global object
+regexSearch = {};
+
 //config
-searchTopBottom = true; //alignment: false == Top, true == Bottom
-searchTopBottomPx = 0; //margin Top/Bottom
-searchLeftPx = 0; //margin Left
+regexSearch.searchTopBottom = true; //alignment: false == Top, true == Bottom
+regexSearch.searchTopBottomPx = 0; //margin Top/Bottom
+regexSearch.searchLeftPx = 0; //margin Left
 
-activeExpFile = true; //toggle for export to txt
-activeExpClip = true; //toggle for export to clipboard
+regexSearch.activeExpFile = true; //toggle for export to txt
+regexSearch.activeExpClip = true; //toggle for export to clipboard
 
-saveLastQuery = true; //save query in browser memory
+regexSearch.saveLastQuery = true; //save query in browser memory
 
 //elements
 var searchMain = document.createElement('div');
@@ -33,14 +36,14 @@ searchDiv.id = 'searchDiv';
 searchDiv.style.cssText = "display: none;";
 searchMain.appendChild(searchDiv);
 
-if(activeExpFile) {
+if(regexSearch.activeExpFile) {
     var searchExpFile = document.createElement('span');
     searchExpFile.id = 'searchExpFile';
     searchExpFile.textContent = 'export';
     searchDiv.appendChild(searchExpFile);
 }
 
-if(activeExpClip) {
+if(regexSearch.activeExpClip) {
     var searchExpClip = document.createElement('span');
     searchExpClip.id = 'searchExpClip';
     searchExpClip.textContent = 'copy all';
@@ -77,13 +80,13 @@ searchDiv.appendChild(searchSpan);
 var css = document.createElement("style");
 css.type = "text/css";
 css.innerHTML = ".highlighted { background-color:yellow; } ";
-let positioning =((searchTopBottom) ? "bottom: "+searchTopBottomPx+"px; " : "top: "+searchTopBottomPx+"px; ")+"left: "+searchLeftPx+"px;";
+let positioning =((regexSearch.searchTopBottom) ? "bottom: "+regexSearch.searchTopBottomPx+"px; " : "top: "+regexSearch.searchTopBottomPx+"px; ")+"left: "+regexSearch.searchLeftPx+"px;";
 css.innerHTML += "#searchMain { all:unset; color:black; position:fixed; z-index:2147483647; "+positioning+" font-size: 14px; line-height:16px; } ";
 css.innerHTML += "#searchToggle {  all:unset; float:left; user-select:none; cursor:pointer; background: #ffffff; padding:5px;  font-weight: bold; border: 1px solid; } ";
 css.innerHTML += "#searchDiv { all:unset; float:left; } ";
-if(activeExpFile)
+if(regexSearch.activeExpFile)
     css.innerHTML += "#searchExpFile { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
-if(activeExpClip)
+if(regexSearch.activeExpClip)
     css.innerHTML += "#searchExpClip { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; display: none; } ";
 css.innerHTML += "#searchStart { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
 css.innerHTML += "#searchPrev { all:unset; float:left; user-select:none; cursor:pointer; background-color:white; padding:5px; font-weight: bold; border: 1px solid; margin-left: -1px; } ";
@@ -94,8 +97,8 @@ css.innerHTML += "#searchInput:focus { outline: none; } ";
 css.innerHTML += "#searchSpan { all:unset; float:left; display:none; padding: 5px; background-color:white; color:red; border: 1px solid black; margin-left: -1px; } ";
 document.body.appendChild(css);
 
-//globals
-toggleDiv = function() {
+//functions
+regexSearch.toggleDiv = function() {
     var searchDiv = document.getElementById('searchDiv');
     if(searchDiv.style.display == 'none')
         searchDiv.style.display = 'block';
@@ -103,8 +106,8 @@ toggleDiv = function() {
         searchDiv.style.display = 'none';
 };
 
-resetColor = function() {
-    selectedElement = 0;
+regexSearch.resetColor = function() {
+    regexSearch.selectedElement = 0;
     var em = document.querySelectorAll('em[class^="highlighted"]');
     if(!em.length)
         return;
@@ -117,41 +120,41 @@ resetColor = function() {
     }
 };
 
-selectedElement = 0;
-selectElement = function(forward) {
+regexSearch.selectedElement = 0;
+regexSearch.selectElement = function(forward) {
     var em = document.querySelectorAll('em[class^="highlighted"]');
     if(!em.length)
         return;
-    var previousElement = selectedElement;
+    var previousElement = regexSearch.selectedElement;
     if(forward)
-        selectedElement++;
+        regexSearch.selectedElement++;
     else
-        selectedElement--;
-    if(selectedElement<1)
-        selectedElement = em.length;
-    if(selectedElement>em.length)
-        selectedElement = 1;
+        regexSearch.selectedElement--;
+    if(regexSearch.selectedElement<1)
+        regexSearch.selectedElement = em.length;
+    if(regexSearch.selectedElement>em.length)
+        regexSearch.selectedElement = 1;
     if(previousElement)
         em[previousElement-1].removeAttribute('style');
-    em[selectedElement-1].style.backgroundColor = 'orange';
-    em[selectedElement-1].scrollIntoView({block: "center"});
+    em[regexSearch.selectedElement-1].style.backgroundColor = 'orange';
+    em[regexSearch.selectedElement-1].scrollIntoView({block: "center"});
     var amount = document.querySelector('#searchAmount');
     amount.style.display = 'inline';
-    amount.textContent = selectedElement + "/" + em.length;
+    amount.textContent = regexSearch.selectedElement + "/" + em.length;
 };
 
-findAndColor = function() {
+regexSearch.findAndColor = function() {
     var warning = document.getElementById('searchSpan');
     warning.innerHTML = '';
     warning.style.display = 'none';
     var input = document.getElementById('searchInput').value;
-    if(saveLastQuery)
+    if(regexSearch.saveLastQuery)
         localStorage.setItem('regexSearch_query', input);
     var replacement = "<em class='highlighted'>$1</em>";
-    findAndReplace("("+input+")", replacement, false);
+    regexSearch.findAndReplace("("+input+")", replacement, false);
 };
 
-findAndReplace = function(searchText, replacement, searchNode) {
+regexSearch.findAndReplace = function(searchText, replacement, searchNode) {
     if (searchText == "()") {
         return;
     }
@@ -194,7 +197,7 @@ findAndReplace = function(searchText, replacement, searchNode) {
     }
 };
 
-saveData = (function () {
+regexSearch.saveData = (function () {
     var a = document.createElement("a");
     document.body.appendChild(a);
     a.style = "display: none";
@@ -208,7 +211,7 @@ saveData = (function () {
         a.parentNode.removeChild(a);
     };
 }());
-exportData = function(toTxt) {
+regexSearch.exportData = function(toTxt) {
     var em = document.querySelectorAll('em[class^="highlighted"]');
     if(!em.length)
         return;
@@ -220,15 +223,15 @@ exportData = function(toTxt) {
     var now = new Date();
     var stamp = "-"+now.getFullYear().toString()+("00" + (now.getMonth()+1).toString()).slice(-2)+("00" + now.getDate().toString()).slice(-2)+"-"+("00" + now.getHours().toString()).slice(-2)+("00" + now.getMinutes().toString()).slice(-2)+("00" + now.getSeconds().toString()).slice(-2);
     if(toTxt)
-        saveData(text, "dump"+stamp+".txt");
+        regexSearch.saveData(text, "dump"+stamp+".txt");
     else
         GM.setClipboard(text);
 };
 
 //CSP workaround
 function searchToggleFn(){
-    toggleDiv();
-    if(saveLastQuery) {
+    regexSearch.toggleDiv();
+    if(regexSearch.saveLastQuery) {
         let temp = localStorage.getItem('regexSearch_query');
         if(temp)
             document.getElementById('searchInput').value = temp;
@@ -238,36 +241,36 @@ function searchToggleFn(){
 }
 function searchStartFn(){
     document.querySelector('#searchAmount').style.display = 'none';
-    if(activeExpFile)
+    if(regexSearch.activeExpFile)
         document.querySelector('#searchExpFile').style.display = 'none';
-    if(activeExpClip)
+    if(regexSearch.activeExpClip)
         document.querySelector('#searchExpClip').style.display = 'none';
-    resetColor();
-    findAndColor();
-    selectElement(true);
-    if(activeExpFile && document.querySelectorAll('em[class^="highlighted"]').length)
+    regexSearch.resetColor();
+    regexSearch.findAndColor();
+    regexSearch.selectElement(true);
+    if(regexSearch.activeExpFile && document.querySelectorAll('em[class^="highlighted"]').length)
         document.getElementById('searchExpFile').style.display = 'inline';
-    if(activeExpClip && document.querySelectorAll('em[class^="highlighted"]').length)
+    if(regexSearch.activeExpClip && document.querySelectorAll('em[class^="highlighted"]').length)
         document.getElementById('searchExpClip').style.display = 'inline';
 }
 function searchPrevFn(){
-    selectElement(false);
+    regexSearch.selectElement(false);
 }
 function searchNextFn(){
-    selectElement(true);
+    regexSearch.selectElement(true);
 }
 function searchExpFileFn(){
-    exportData(true);
+    regexSearch.exportData(true);
 }
 function searchExpClipFn(){
-    exportData(false);
+    regexSearch.exportData(false);
 }
 
 document.getElementById('searchToggle').addEventListener('click', searchToggleFn);
 document.getElementById('searchStart').addEventListener('click', searchStartFn);
 document.getElementById('searchPrev').addEventListener('click', searchPrevFn);
 document.getElementById('searchNext').addEventListener('click', searchNextFn);
-if(activeExpFile)
+if(regexSearch.activeExpFile)
     document.getElementById('searchExpFile').addEventListener('click', searchExpFileFn);
-if(activeExpClip)
+if(regexSearch.activeExpClip)
     document.getElementById('searchExpClip').addEventListener('click', searchExpClipFn);
